@@ -37,15 +37,22 @@ class TigerShark {
   vex::motor backLeftUpMotor;
   vex::motor backLeftDownMotor;
 
+  vex::motor_group leftGears;
+  vex::motor_group rightGears;
+
   vex::motor intakeAndRoller1AndRoller2Motor;
   vex::motor bazookaMotor;
   vex::motor roller3Motor;
 
-  vex::motor_group leftGears;
-  vex::motor_group rightGears;
-
   vex::digital_out* pistonBazookaMech;
   vex::digital_out* pistonLoaderMech;
+
+  vex::controller::button bazookaPistonMechButton;
+  vex::controller::button loaderPistonMechButton;
+
+  vex::controller::button intakeToBackRollerButton;
+  vex::controller::button intakeToBazookaRollerButton;
+  vex::controller::button ejectButton;
 
 
   void initShark(vex::gearSetting motorRatio){
@@ -124,7 +131,7 @@ void usercontrol() {
 
   bool piston_loader_state = false;
   bool piston_bazooka_state = false;
-  bool last_x_pressed = false;
+  bool bazook_btn_pressed = false;
   bool last_d_pressed = false;
 
   // User control code here
@@ -143,9 +150,12 @@ void usercontrol() {
     currentTiger.rightGears.spin(forward, rightSpeed, rpm);
     currentTiger.leftGears.spin(forward, leftSpeed, rpm);
 
-    // --- PISTON TOGGLE LOGIC ---
+
+
+
+    // *** PISTON TOGGLE LOGIC ***
     // Button Down toggles piston2
-    if (Controller1.ButtonDown.pressing()) {
+    if (currentTiger.loaderPistonMechButton.pressing()) {
       if (!last_d_pressed) {
         piston_loader_state = !piston_loader_state;
         currentTiger.pistonLoaderMech->set(piston_loader_state);
@@ -156,41 +166,48 @@ void usercontrol() {
     }
 
     // Button X toggles piston
-    if (Controller1.ButtonX.pressing()) {
-      if (!last_x_pressed) {
+    if (currentTiger.bazookaPistonMechButton.pressing()) {
+      if (!bazook_btn_pressed) {
         piston_bazooka_state = !piston_bazooka_state;
         currentTiger.pistonBazookaMech->set(piston_bazooka_state);
-        last_x_pressed = true;
+        bazook_btn_pressed = true;
       }
     } else {
-      last_x_pressed = false;
+      bazook_btn_pressed = false;
     }
 
+
+
+
     // *** AUXILIARY MOTOR CONTROL ***
-    if (Controller1.ButtonA.pressing()) {
+    if (currentTiger.intakeToBackRollerButton.pressing()) {
       currentTiger.roller3Motor.spin(reverse, currentTiger.aux_speed, rpm);
       currentTiger.intakeAndRoller1AndRoller2Motor.spin(reverse, currentTiger.aux_speed, rpm);
       currentTiger.bazookaMotor.spin(reverse, currentTiger.aux_speed, rpm);
-    } else if (Controller1.ButtonB.pressing()) {
-      currentTiger.roller3Motor.spin(forward, currentTiger.aux_speed, rpm);
-      currentTiger.intakeAndRoller1AndRoller2Motor.spin(forward, currentTiger.aux_speed, rpm);
-      currentTiger.bazookaMotor.spin(forward, currentTiger.aux_speed, rpm);
-    } else if (Controller1.ButtonY.pressing()) {
+    } 
+    
+    else if (currentTiger.intakeToBazookaRollerButton.pressing()) {
       currentTiger.roller3Motor.spin(reverse, currentTiger.aux_speed, rpm);
       currentTiger.intakeAndRoller1AndRoller2Motor.spin(forward, currentTiger.aux_speed, rpm);
       currentTiger.bazookaMotor.spin(forward, currentTiger.aux_speed, rpm);
-    } else {
+    } 
+    
+    else if (currentTiger.ejectButton.pressing()) {
+      currentTiger.roller3Motor.spin(forward, currentTiger.aux_speed, rpm);
+      currentTiger.intakeAndRoller1AndRoller2Motor.spin(forward, currentTiger.aux_speed, rpm);
+      currentTiger.bazookaMotor.spin(forward, currentTiger.aux_speed, rpm);
+    } 
+
+    else {
       currentTiger.roller3Motor.stop();
       currentTiger.intakeAndRoller1AndRoller2Motor.stop();
       currentTiger.bazookaMotor.stop();
     }
 
-    // Display motor diagnostics
-    Brain.Screen.clearScreen();
-    Brain.Screen.setCursor(1, 1);
-    Brain.Screen.print("Right Speed: %.2f RPM", currentTiger.rightGears.velocity(rpm));
-    Brain.Screen.setCursor(1, 20);
 
+
+
+    // Display motor diagnostics
     displayDiagnostics(currentTiger);
 
     wait(100, msec);
@@ -204,23 +221,43 @@ int main() {
   // fixed config for each tiger
   // tiger 1 config (Blue and White)
   tigerShark[0].drivetrainMotorsRatio = ratio18_1;
-  tigerShark[0].maxRPM = 600.0;
+  tigerShark[0].maxRPM = 200.0;
   tigerShark[0].aux_speed = 200.0;
+  tigerShark[0].intakeToBazookaRollerButton = Controller1.ButtonY;
+  tigerShark[0].intakeToBackRollerButton = Controller1.ButtonA;
+  tigerShark[0].ejectButton = Controller1.ButtonB;
+  tigerShark[0].bazookaPistonMechButton = Controller1.ButtonX;
+  tigerShark[0].loaderPistonMechButton = Controller1.ButtonDown;
 
   // tiger 2 config (Black and Gold)
   tigerShark[1].drivetrainMotorsRatio = ratio18_1;
-  tigerShark[1].maxRPM = 600.0;
+  tigerShark[1].maxRPM = 200.0;
   tigerShark[1].aux_speed = 200.0;
+  tigerShark[1].intakeToBazookaRollerButton = Controller1.ButtonY;
+  tigerShark[1].intakeToBackRollerButton = Controller1.ButtonA;
+  tigerShark[1].ejectButton = Controller1.ButtonB;
+  tigerShark[1].bazookaPistonMechButton = Controller1.ButtonX;
+  tigerShark[1].loaderPistonMechButton = Controller1.ButtonDown;
 
   // tiger 3 config (Red and White)
   tigerShark[2].drivetrainMotorsRatio = ratio6_1;
   tigerShark[2].maxRPM = 600.0;
   tigerShark[2].aux_speed = 200.0;
+  tigerShark[2].intakeToBazookaRollerButton = Controller1.ButtonY;
+  tigerShark[2].intakeToBackRollerButton = Controller1.ButtonA;
+  tigerShark[2].ejectButton = Controller1.ButtonB;
+  tigerShark[2].bazookaPistonMechButton = Controller1.ButtonX;
+  tigerShark[2].loaderPistonMechButton = Controller1.ButtonDown;
 
   // tiger 4 config (Blue and Purple)
   tigerShark[3].drivetrainMotorsRatio = ratio6_1;
   tigerShark[3].maxRPM = 600.0;
   tigerShark[3].aux_speed = 200.0;
+  tigerShark[3].intakeToBazookaRollerButton = Controller1.ButtonY;
+  tigerShark[3].intakeToBackRollerButton = Controller1.ButtonA;
+  tigerShark[3].ejectButton = Controller1.ButtonB;
+  tigerShark[3].bazookaPistonMechButton = Controller1.ButtonX;
+  tigerShark[3].loaderPistonMechButton = Controller1.ButtonDown;
 
 
   tigerShark[currentTigerIndex].initShark(tigerShark[currentTigerIndex].drivetrainMotorsRatio);
@@ -241,7 +278,12 @@ int main() {
 
 void displayDiagnostics(TigerShark& currentTiger) {
 int row = 2;
-    
+
+    Brain.Screen.clearScreen();
+    Brain.Screen.setCursor(1, 1);
+    Brain.Screen.print("Tiger #%d Right Speed: %.2f RPM", currentTigerIndex + 1, currentTiger.rightGears.velocity(rpm));
+    Brain.Screen.setCursor(1, 20);
+
     // Right side motors
     Brain.Screen.setCursor(row++, 1);
     Brain.Screen.print("FR Up Temp: %.1fC", currentTiger.frontRightUpMotor.temperature(celsius));
