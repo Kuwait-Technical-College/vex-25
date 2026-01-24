@@ -126,8 +126,6 @@ void autonomous() {
 
 void usercontrol() {
   TigerShark& currentTiger = tigerShark[currentTigerIndex];
-  Brain.Screen.clearScreen();
-  Brain.Screen.print("Driver Control");
 
   bool piston_loader_state = false;
   bool piston_bazooka_state = false;
@@ -136,8 +134,8 @@ void usercontrol() {
 
   // User control code here
   while (1) {
-    // DRIVE TRAIN CONTROL
 
+    // *** DRIVE TRAIN CONTROL LOGIC ***
     // Axis 3 is Forward/Backward, Axis 1 is Turning
     double forwardBackward = (Controller1.Axis3.position() / 100.0) * currentTiger.maxRPM;
     double turning = (Controller1.Axis1.position() / 100.0) * currentTiger.maxRPM;
@@ -146,7 +144,6 @@ void usercontrol() {
     double rightSpeed = forwardBackward + turning;
     double leftSpeed = forwardBackward - turning;
 
-    // Spin motors
     currentTiger.rightGears.spin(forward, rightSpeed, rpm);
     currentTiger.leftGears.spin(forward, leftSpeed, rpm);
 
@@ -154,7 +151,7 @@ void usercontrol() {
 
 
     // *** PISTON TOGGLE LOGIC ***
-    // Button Down toggles piston2
+    // Loader Piston
     if (currentTiger.loaderPistonMechButton.pressing()) {
       if (!last_d_pressed) {
         piston_loader_state = !piston_loader_state;
@@ -165,7 +162,7 @@ void usercontrol() {
       last_d_pressed = false;
     }
 
-    // Button X toggles piston
+    // Bazooka piston
     if (currentTiger.bazookaPistonMechButton.pressing()) {
       if (!bazook_btn_pressed) {
         piston_bazooka_state = !piston_bazooka_state;
@@ -207,8 +204,10 @@ void usercontrol() {
 
 
 
-    // Display motor diagnostics
-    displayDiagnostics(currentTiger);
+    // Display
+    displayDriverControl(currentTiger);
+
+
 
     wait(100, msec);
   }
@@ -276,10 +275,12 @@ int main() {
   }
 }
 
-void displayDiagnostics(TigerShark& currentTiger) {
-int row = 2;
+void displayDriverControl(TigerShark& currentTiger) {
+    int row = 2;
 
     Brain.Screen.clearScreen();
+    Brain.Screen.print("Driver Control");
+
     Brain.Screen.setCursor(1, 1);
     Brain.Screen.print("Tiger #%d Right Speed: %.2f RPM", currentTigerIndex + 1, currentTiger.rightGears.velocity(rpm));
     Brain.Screen.setCursor(1, 20);
