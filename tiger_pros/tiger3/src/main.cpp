@@ -33,7 +33,8 @@ signed char inertialSensorPort = 16;
 pros::MotorGroup* leftMotorsGroup;
 pros::MotorGroup* rightMotorsGroup;
 
-signed char intakeAndRoller1AndRoller2Motor = 1;
+signed char intakeRoller = 9;
+signed char roller1AndRoller2Motor = 1;
 signed char bazookaMotor = 2;
 signed char roller3Motor = 10;
 
@@ -272,7 +273,8 @@ void opcontrol() {
     bool last_d_pressed = false;
     bool last_x_pressed = false;
 
-    pros::Motor topChainMotor(intakeAndRoller1AndRoller2Motor, pros::MotorGearset::green);
+    pros::Motor topChainMotor(roller1AndRoller2Motor, pros::MotorGearset::green);
+    pros::Motor intakeMotorFront(intakeRoller, pros::MotorGearset::green);
     pros::Motor intakeMotor(bazookaMotor, pros::MotorGearset::green);
     pros::Motor upperRollerMotor(roller3Motor, pros::MotorGearset::green);
 
@@ -286,21 +288,25 @@ void opcontrol() {
 
         if (controller.get_digital(intakeToBackRollerButton)) {
             topChainMotor.move_velocity(aux_speed);
+            intakeMotorFront.move_velocity(-aux_speed);
             intakeMotor.move_velocity(-aux_speed);
             upperRollerMotor.move_velocity(aux_speed);
         } 
         else if (controller.get_digital(intakeToBazookaRollerButton)) {
             topChainMotor.move_velocity(aux_speed);
+            intakeMotorFront.move_velocity(-aux_speed);
             intakeMotor.move_velocity(-aux_speed);
             upperRollerMotor.move_velocity(-aux_speed);
         } 
 		else if (controller.get_digital(ejectButton)) {
             topChainMotor.move_velocity(-aux_speed);
+            intakeMotorFront.move_velocity(aux_speed);
             intakeMotor.move_velocity(aux_speed);
             upperRollerMotor.move_velocity(aux_speed);
         } 
         else {
             topChainMotor.move_velocity(0);
+            intakeMotorFront.move_velocity(0);
             intakeMotor.move_velocity(0);
             upperRollerMotor.move_velocity(0);
         }
