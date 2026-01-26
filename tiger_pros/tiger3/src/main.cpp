@@ -11,12 +11,12 @@ pros::Controller controller(pros::E_CONTROLLER_MASTER);
 // ------------------------------------------------------------ //
 // Robot Configuration                                          //
 // ------------------------------------------------------------ //
-pros::v5::MotorGears drivetrainMotorsRatio;
-double maxRPM;
-double aux_speed;
-int midWheelTrackWidth;
-int driveTrainRpm;
-int horizontalDrift;
+pros::v5::MotorGears drivetrainMotorsRatio = pros::MotorGearset::green;;
+double maxRPM = 200.0;
+double aux_speed = 200.0;
+int midWheelTrackWidth = 11;
+int driveTrainRpm = 200;
+int horizontalDrift = 2;
 
 signed char frontRightUpMotorPort = 18;
 signed char frontRightDownMotorPort = -17;
@@ -30,22 +30,33 @@ signed char backLeftDownMotorPort = -12;
 
 signed char inertialSensorPort = 16;
 
-pros::MotorGroup* leftMotorsGroup;
-pros::MotorGroup* rightMotorsGroup;
-
-signed char intakeRoller = 9;
+signed char intakeRoller = 8;
 signed char roller1AndRoller2Motor = 1;
 signed char bazookaMotor = 2;
 signed char roller3Motor = 10;
 
-pros::adi::DigitalOut* pistonBazookaMech;
-pros::adi::DigitalOut* pistonLoaderMech;
+pros::MotorGroup leftMotorsGroup = pros::MotorGroup({
+        frontLeftUpMotorPort, 
+        frontLeftDownMotorPort, 
+        backLeftUpMotorPort, 
+        backLeftDownMotorPort
+    }, drivetrainMotorsRatio);
 
-pros::controller_digital_e_t bazookaPistonMechButton;
-pros::controller_digital_e_t loaderPistonMechButton;
-pros::controller_digital_e_t intakeToBackRollerButton;
-pros::controller_digital_e_t intakeToBazookaRollerButton;
-pros::controller_digital_e_t ejectButton;
+pros::MotorGroup rightMotorsGroup = pros::MotorGroup({
+        frontRightUpMotorPort, 
+        frontRightDownMotorPort, 
+        backRightUpMotorPort, 
+        backRightDownMotorPort
+    }, drivetrainMotorsRatio);;
+
+pros::adi::DigitalOut pistonBazookaMech =  pros::adi::DigitalOut('H');
+pros::adi::DigitalOut pistonLoaderMech = pros::adi::DigitalOut('G');
+
+pros::controller_digital_e_t bazookaPistonMechButton = pros::E_CONTROLLER_DIGITAL_X;
+pros::controller_digital_e_t loaderPistonMechButton = pros::E_CONTROLLER_DIGITAL_DOWN;
+pros::controller_digital_e_t intakeToBackRollerButton = pros::E_CONTROLLER_DIGITAL_A;
+pros::controller_digital_e_t intakeToBazookaRollerButton = pros::E_CONTROLLER_DIGITAL_Y;
+pros::controller_digital_e_t ejectButton = pros::E_CONTROLLER_DIGITAL_B;
 
 // Inertial Sensor
 pros::Imu imu(inertialSensorPort);
@@ -60,36 +71,6 @@ void initialize() {
     pros::lcd::initialize(); // initialize brain screen
 
     // Robot configuration
-    drivetrainMotorsRatio = pros::MotorGearset::green;
-    maxRPM = 200.0;
-    aux_speed = 200.0;
-    midWheelTrackWidth = 11;
-    driveTrainRpm = 450;
-    horizontalDrift = 2;
-    intakeToBazookaRollerButton = pros::E_CONTROLLER_DIGITAL_Y;
-    intakeToBackRollerButton = pros::E_CONTROLLER_DIGITAL_A;
-    ejectButton = pros::E_CONTROLLER_DIGITAL_B;
-    bazookaPistonMechButton = pros::E_CONTROLLER_DIGITAL_X;
-    loaderPistonMechButton = pros::E_CONTROLLER_DIGITAL_DOWN;
-
-    // Initialize motor groups
-    leftMotorsGroup = new pros::MotorGroup({
-        frontLeftUpMotorPort, 
-        frontLeftDownMotorPort, 
-        backLeftUpMotorPort, 
-        backLeftDownMotorPort
-    }, drivetrainMotorsRatio);
-    
-    rightMotorsGroup = new pros::MotorGroup({
-        frontRightUpMotorPort, 
-        frontRightDownMotorPort, 
-        backRightUpMotorPort, 
-        backRightDownMotorPort
-    }, drivetrainMotorsRatio);
-
-    // Initialize pneumatics
-    pistonBazookaMech = new pros::adi::DigitalOut('H');
-    pistonLoaderMech = new pros::adi::DigitalOut('G');
 }
 
 /**
@@ -103,9 +84,6 @@ void disabled() {}
 void competition_initialize() {
 
 }
-
-// get a path used for pure pursuit
-ASSET(example_txt);
 
 /**
  * Runs during auto
@@ -196,8 +174,8 @@ void opcontrol() {
     lemlib::TrackingWheel vertical(&verticalEnc, lemlib::Omniwheel::NEW_2, 0);
 
     // drivetrain settings
-    lemlib::Drivetrain drivetrain(leftMotorsGroup,
-                            rightMotorsGroup, 
+    lemlib::Drivetrain drivetrain(&leftMotorsGroup,
+                            &rightMotorsGroup, 
                             midWheelTrackWidth,
                             lemlib::Omniwheel::NEW_325, // using new 3.25" omnis
                             driveTrainRpm,
@@ -314,7 +292,7 @@ void opcontrol() {
         if (controller.get_digital(loaderPistonMechButton)) {
             if (!last_d_pressed) {
                 piston_state = !piston_state;
-                pistonLoaderMech->set_value(piston_state);
+                pistonLoaderMech.set_value(piston_state);
                 last_d_pressed = true;
             }
         } else {
@@ -324,7 +302,7 @@ void opcontrol() {
         if (controller.get_digital(bazookaPistonMechButton)) {
             if (!last_x_pressed) {
                 piston_state = !piston_state;
-                pistonBazookaMech->set_value(piston_state);
+                pistonBazookaMech.set_value(piston_state);
                 last_x_pressed = true;
             }
         } else {
