@@ -9,7 +9,7 @@
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
 
 // ------------------------------------------------------------ //
-// Robot Configuration                                          //
+// Robot Configuration - Foad Abul                              //
 // ------------------------------------------------------------ //
 pros::v5::MotorGears drivetrainMotorsRatio = pros::MotorGearset::green;;
 double maxRPM = 200.0;
@@ -52,11 +52,11 @@ pros::MotorGroup rightMotorsGroup = pros::MotorGroup({
 pros::adi::DigitalOut pistonBazookaMech =  pros::adi::DigitalOut('H');
 pros::adi::DigitalOut pistonLoaderMech = pros::adi::DigitalOut('G');
 
-pros::controller_digital_e_t bazookaPistonMechButton = pros::E_CONTROLLER_DIGITAL_X;
-pros::controller_digital_e_t loaderPistonMechButton = pros::E_CONTROLLER_DIGITAL_DOWN;
+pros::controller_digital_e_t bazookaPistonMechButton = pros::E_CONTROLLER_DIGITAL_R1;
+pros::controller_digital_e_t loaderPistonMechButton = pros::E_CONTROLLER_DIGITAL_L1;
 pros::controller_digital_e_t intakeToBackRollerButton = pros::E_CONTROLLER_DIGITAL_A;
-pros::controller_digital_e_t intakeToBazookaRollerButton = pros::E_CONTROLLER_DIGITAL_Y;
-pros::controller_digital_e_t ejectButton = pros::E_CONTROLLER_DIGITAL_B;
+pros::controller_digital_e_t intakeToBazookaRollerButton = pros::E_CONTROLLER_DIGITAL_R2;
+pros::controller_digital_e_t ejectButton = pros::E_CONTROLLER_DIGITAL_L2;
 
 // Inertial Sensor
 pros::Imu imu(inertialSensorPort);
