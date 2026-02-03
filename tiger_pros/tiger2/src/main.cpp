@@ -27,6 +27,7 @@ signed char frontLeftUpMotorPort = 13;
 signed char frontLeftDownMotorPort = -14;
 signed char backLeftUpMotorPort = 11;
 signed char backLeftDownMotorPort = -12;
+signed char upperBackFlexWheelPort = 8;
 
 signed char inertialSensorPort = 16;
 
@@ -51,8 +52,10 @@ pros::MotorGroup rightMotorsGroup = pros::MotorGroup({
 
 pros::adi::DigitalOut pistonBazookaMech =  pros::adi::DigitalOut('H');
 pros::adi::DigitalOut pistonLoaderMech = pros::adi::DigitalOut('G');
+pros::adi::DigitalOut pistonWingsMech = pros::adi::DigitalOut('F');
 
 pros::controller_digital_e_t bazookaPistonMechButton = pros::E_CONTROLLER_DIGITAL_R1;
+pros::controller_digital_e_t wingsPistonMechButton = pros::E_CONTROLLER_DIGITAL_UP;
 pros::controller_digital_e_t loaderPistonMechButton = pros::E_CONTROLLER_DIGITAL_L1;
 pros::controller_digital_e_t intakeToBackRollerButton = pros::E_CONTROLLER_DIGITAL_A;
 pros::controller_digital_e_t intakeToBazookaRollerButton = pros::E_CONTROLLER_DIGITAL_R2;
@@ -254,11 +257,13 @@ void opcontrol() {
     bool piston_state = false;
     bool last_d_pressed = false;
     bool last_x_pressed = false;
+    bool last_a_pressed = false;
 
     pros::Motor topChainMotor(roller1AndRoller2Motor, pros::MotorGearset::green);
     pros::Motor intakeMotorFront(intakeRoller, pros::MotorGearset::green);
     pros::Motor intakeMotor(bazookaMotor, pros::MotorGearset::green);
     pros::Motor upperRollerMotor(roller3Motor, pros::MotorGearset::green);
+    pros::Motor upperBackFlexWheelMotor(upperBackFlexWheelPort, pros::MotorGearset::green);
 
 
     while (true) {
@@ -273,6 +278,7 @@ void opcontrol() {
             intakeMotorFront.move_velocity(-aux_speed);
             intakeMotor.move_velocity(-aux_speed);
             upperRollerMotor.move_velocity(aux_speed);
+            upperBackFlexWheelMotor.move_velocity(aux_speed);
         } 
         else if (controller.get_digital(intakeToBazookaRollerButton)) {
             topChainMotor.move_velocity(aux_speed);
@@ -291,6 +297,7 @@ void opcontrol() {
             intakeMotorFront.move_velocity(0);
             intakeMotor.move_velocity(0);
             upperRollerMotor.move_velocity(0);
+            upperBackFlexWheelMotor.move_velocity(0);
         }
         
         if (controller.get_digital(loaderPistonMechButton)) {
@@ -313,6 +320,16 @@ void opcontrol() {
             last_x_pressed = false;
         }
         
+        if (controller.get_digital(wingsPistonMechButton)) {
+            if (!last_a_pressed) {
+                piston_state = !piston_state;
+                pistonWingsMech.set_value(piston_state);
+                last_a_pressed = true;
+            }
+        } else {
+            last_a_pressed = false;
+        }
+
         // delay to save resources
         pros::delay(10);
     }
