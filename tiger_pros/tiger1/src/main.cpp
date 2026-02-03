@@ -35,6 +35,8 @@ signed char roller1AndRoller2Motor = 1;
 signed char bazookaMotor = 2;
 signed char roller3Motor = 10;
 
+
+
 pros::MotorGroup leftMotorsGroup = pros::MotorGroup({
         frontLeftUpMotorPort, 
         frontLeftDownMotorPort, 
@@ -51,8 +53,10 @@ pros::MotorGroup rightMotorsGroup = pros::MotorGroup({
 
 pros::adi::DigitalOut pistonBazookaMech =  pros::adi::DigitalOut('H');
 pros::adi::DigitalOut pistonLoaderMech = pros::adi::DigitalOut('G');
+pros::adi::DigitalOut pistonWingsMech = pros::adi::DigitalOut('F');
 
 pros::controller_digital_e_t bazookaPistonMechButton = pros::E_CONTROLLER_DIGITAL_X;
+pros::controller_digital_e_t wingsPistonMechButton = pros::E_CONTROLLER_DIGITAL_UP;
 pros::controller_digital_e_t loaderPistonMechButton = pros::E_CONTROLLER_DIGITAL_DOWN;
 pros::controller_digital_e_t intakeToBackRollerButton = pros::E_CONTROLLER_DIGITAL_A;
 pros::controller_digital_e_t intakeToBazookaRollerButton = pros::E_CONTROLLER_DIGITAL_Y;
@@ -254,6 +258,7 @@ void opcontrol() {
     bool piston_state = false;
     bool last_d_pressed = false;
     bool last_x_pressed = false;
+    bool last_a_pressed = false;
 
     pros::Motor topChainMotor(roller1AndRoller2Motor, pros::MotorGearset::green);
     pros::Motor intakeMotorFront(intakeRoller, pros::MotorGearset::green);
@@ -312,6 +317,18 @@ void opcontrol() {
         } else {
             last_x_pressed = false;
         }
+
+
+        if (controller.get_digital(wingsPistonMechButton)) {
+            if (!last_a_pressed) {
+                piston_state = !piston_state;
+                pistonWingsMech.set_value(piston_state);
+                last_a_pressed = true;
+            }
+        } else {
+            last_a_pressed = false;
+        }
+        
         
         // delay to save resources
         pros::delay(10);
