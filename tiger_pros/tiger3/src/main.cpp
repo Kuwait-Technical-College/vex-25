@@ -11,7 +11,7 @@ pros::Controller controller(pros::E_CONTROLLER_MASTER);
 // ------------------------------------------------------------ //
 // Robot Configuration                                          //
 // ------------------------------------------------------------ //
-pros::v5::MotorGears drivetrainMotorsRatio = pros::MotorGearset::green;;
+pros::v5::MotorGears drivetrainMotorsRatio = pros::MotorGearset::blue;;
 double maxRPM = 200.0;
 double aux_speed = 200.0;
 int midWheelTrackWidth = 11;
@@ -27,6 +27,7 @@ signed char frontLeftUpMotorPort = 13;
 signed char frontLeftDownMotorPort = -14;
 signed char backLeftUpMotorPort = 11;
 signed char backLeftDownMotorPort = -12;
+signed char upperBackFlexWheelPort = 8;
 
 signed char inertialSensorPort = 16;
 
@@ -52,10 +53,11 @@ pros::MotorGroup rightMotorsGroup = pros::MotorGroup({
 pros::adi::DigitalOut pistonBazookaMech =  pros::adi::DigitalOut('H');
 pros::adi::DigitalOut pistonLoaderMech = pros::adi::DigitalOut('G');
 
-pros::controller_digital_e_t bazookaPistonMechButton = pros::E_CONTROLLER_DIGITAL_X;
+pros::controller_digital_e_t bazookaPistonMechButton = pros::E_CONTROLLER_DIGITAL_R1;
 pros::controller_digital_e_t loaderPistonMechButton = pros::E_CONTROLLER_DIGITAL_DOWN;
-pros::controller_digital_e_t intakeToBackRollerButton = pros::E_CONTROLLER_DIGITAL_A;
-pros::controller_digital_e_t intakeToBazookaRollerButton = pros::E_CONTROLLER_DIGITAL_Y;
+pros::controller_digital_e_t intakeToBackRollerButton = pros::E_CONTROLLER_DIGITAL_L1;
+pros::controller_digital_e_t intakeToBazookaRollerButton = pros::E_CONTROLLER_DIGITAL_L2;
+pros::controller_digital_e_t intakeOnlyButton = pros::E_CONTROLLER_DIGITAL_R2;
 pros::controller_digital_e_t ejectButton = pros::E_CONTROLLER_DIGITAL_B;
 
 // Inertial Sensor
@@ -255,6 +257,8 @@ void opcontrol() {
     pros::Motor intakeMotorFront(intakeRoller, pros::MotorGearset::green);
     pros::Motor intakeMotor(bazookaMotor, pros::MotorGearset::green);
     pros::Motor upperRollerMotor(roller3Motor, pros::MotorGearset::green);
+    pros::Motor upperBackFlexWheelMotor(upperBackFlexWheelPort, pros::MotorGearset::green);
+    
 
 
     while (true) {
@@ -266,9 +270,10 @@ void opcontrol() {
 
         if (controller.get_digital(intakeToBackRollerButton)) {
             topChainMotor.move_velocity(aux_speed);
-            intakeMotorFront.move_velocity(-aux_speed);
+            intakeMotorFront.move_velocity(0);
             intakeMotor.move_velocity(-aux_speed);
             upperRollerMotor.move_velocity(aux_speed);
+            upperBackFlexWheelMotor.move_velocity(aux_speed);
         } 
         else if (controller.get_digital(intakeToBazookaRollerButton)) {
             topChainMotor.move_velocity(aux_speed);
@@ -282,11 +287,18 @@ void opcontrol() {
             intakeMotor.move_velocity(aux_speed);
             upperRollerMotor.move_velocity(aux_speed);
         } 
+        else if (controller.get_digital(intakeOnlyButton)) {
+            topChainMotor.move_velocity(0);
+            intakeMotorFront.move_velocity(-aux_speed);
+            intakeMotor.move_velocity(0);
+            upperRollerMotor.move_velocity(0);
+        }
         else {
             topChainMotor.move_velocity(0);
             intakeMotorFront.move_velocity(0);
             intakeMotor.move_velocity(0);
             upperRollerMotor.move_velocity(0);
+            upperBackFlexWheelMotor.move_velocity(0);
         }
         
         if (controller.get_digital(loaderPistonMechButton)) {
@@ -313,3 +325,5 @@ void opcontrol() {
         pros::delay(10);
     }
 }
+//kp=12.,kd+36
+//angular kp2.35,kd20
