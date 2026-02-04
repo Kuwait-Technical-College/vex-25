@@ -11,13 +11,15 @@ pros::Controller controller(pros::E_CONTROLLER_MASTER);
 // ------------------------------------------------------------ //
 // Robot Configuration - Foad Abul                              //
 // ------------------------------------------------------------ //
-pros::v5::MotorGears drivetrainMotorsRatio = pros::MotorGearset::green;;
+pros::v5::MotorGears drivetrainMotorsRatio = pros::MotorGearset::blue; // 600 rpm
 double maxRPM = 200.0;
 double aux_speed = 200.0;
 int midWheelTrackWidth = 11;
 int driveTrainRpm = 200;
 int horizontalDrift = 2;
 
+
+// ports definition
 signed char frontRightUpMotorPort = 18;
 signed char frontRightDownMotorPort = -17;
 signed char backRightUpMotorPort = 20;
@@ -36,6 +38,9 @@ signed char roller1AndRoller2Motor = 1;
 signed char bazookaMotor = 2;
 signed char roller3Motor = 10;
 
+signed char rotationSensorPort = 15;
+
+
 pros::MotorGroup leftMotorsGroup = pros::MotorGroup({
         frontLeftUpMotorPort, 
         frontLeftDownMotorPort, 
@@ -48,7 +53,7 @@ pros::MotorGroup rightMotorsGroup = pros::MotorGroup({
         frontRightDownMotorPort, 
         backRightUpMotorPort, 
         backRightDownMotorPort
-    }, drivetrainMotorsRatio);;
+    }, drivetrainMotorsRatio);
 
 pros::adi::DigitalOut pistonBazookaMech =  pros::adi::DigitalOut('H');
 pros::adi::DigitalOut pistonLoaderMech = pros::adi::DigitalOut('G');
@@ -63,6 +68,15 @@ pros::controller_digital_e_t ejectButton = pros::E_CONTROLLER_DIGITAL_L2;
 
 // Inertial Sensor
 pros::Imu imu(inertialSensorPort);
+
+// vertical tracking wheel encoder
+pros::Rotation verticalEnc(rotationSensorPort);
+
+pros::Motor topChainMotor(roller1AndRoller2Motor, pros::MotorGearset::green);
+pros::Motor intakeMotorFront(intakeRoller, pros::MotorGearset::green);
+pros::Motor intakeMotor(bazookaMotor, pros::MotorGearset::green);
+pros::Motor upperRollerMotor(roller3Motor, pros::MotorGearset::green);
+pros::Motor upperBackFlexWheelMotor(upperBackFlexWheelPort, pros::MotorGearset::green);
 
 /**
  * Runs initialization code. This occurs as soon as the program is started.
@@ -165,17 +179,13 @@ void autonomous() {
     chassis.setPose(0, 0, 0);
     chassis.turnToHeading(180, 999999);
     */
-   
-   
-
 }
 
 /**
  * Runs in driver control
  */
 void opcontrol() {
-    // vertical tracking wheel encoder. Rotation sensor, port 23, reversed
-    pros::Rotation verticalEnc(15);
+
 
     // vertical tracking wheel. 2.75" diameter, 2.5" offset, left of the robot (negative)
     lemlib::TrackingWheel vertical(&verticalEnc, lemlib::Omniwheel::NEW_2, 0);
@@ -258,12 +268,6 @@ void opcontrol() {
     bool last_d_pressed = false;
     bool last_x_pressed = false;
     bool last_a_pressed = false;
-
-    pros::Motor topChainMotor(roller1AndRoller2Motor, pros::MotorGearset::green);
-    pros::Motor intakeMotorFront(intakeRoller, pros::MotorGearset::green);
-    pros::Motor intakeMotor(bazookaMotor, pros::MotorGearset::green);
-    pros::Motor upperRollerMotor(roller3Motor, pros::MotorGearset::green);
-    pros::Motor upperBackFlexWheelMotor(upperBackFlexWheelPort, pros::MotorGearset::green);
 
 
     while (true) {
