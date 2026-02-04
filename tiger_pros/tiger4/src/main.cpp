@@ -11,13 +11,14 @@ pros::Controller controller(pros::E_CONTROLLER_MASTER);
 // ------------------------------------------------------------ //
 // Robot Configuration                                          //
 // ------------------------------------------------------------ //
-pros::v5::MotorGears drivetrainMotorsRatio = pros::MotorGearset::green;;
+pros::v5::MotorGears drivetrainMotorsRatio = pros::MotorGearset::blue; // 600 rpm
 double maxRPM = 200.0;
 double aux_speed = 200.0;
 int midWheelTrackWidth = 11;
 int driveTrainRpm = 200;
 int horizontalDrift = 2;
 
+// ports definition
 signed char frontRightUpMotorPort = 18;
 signed char frontRightDownMotorPort = -17;
 signed char backRightUpMotorPort = 20;
@@ -27,13 +28,16 @@ signed char frontLeftUpMotorPort = 13;
 signed char frontLeftDownMotorPort = -14;
 signed char backLeftUpMotorPort = 11;
 signed char backLeftDownMotorPort = -12;
+signed char upperBackFlexWheelPort = 8;
 
 signed char inertialSensorPort = 16;
 
-signed char intakeRoller = 9;
-signed char roller1AndRoller2Motor = 1;
-signed char bazookaMotor = 2;
-signed char roller3Motor = 10;
+signed char intakeRollerPort = 9;
+signed char roller1MotorPort = 1;
+signed char bazookaMotorPort = 2;
+signed char roller2MotorPort = 10;
+
+signed char rotationSensorPort = 15;
 
 pros::MotorGroup leftMotorsGroup = pros::MotorGroup({
         frontLeftUpMotorPort, 
@@ -52,14 +56,23 @@ pros::MotorGroup rightMotorsGroup = pros::MotorGroup({
 pros::adi::DigitalOut pistonBazookaMech =  pros::adi::DigitalOut('H');
 pros::adi::DigitalOut pistonLoaderMech = pros::adi::DigitalOut('G');
 
-pros::controller_digital_e_t bazookaPistonMechButton = pros::E_CONTROLLER_DIGITAL_X;
-pros::controller_digital_e_t loaderPistonMechButton = pros::E_CONTROLLER_DIGITAL_DOWN;
+pros::controller_digital_e_t bazookaPistonMechButton = pros::E_CONTROLLER_DIGITAL_R1;
+pros::controller_digital_e_t loaderPistonMechButton = pros::E_CONTROLLER_DIGITAL_L1;
 pros::controller_digital_e_t intakeToBackRollerButton = pros::E_CONTROLLER_DIGITAL_A;
-pros::controller_digital_e_t intakeToBazookaRollerButton = pros::E_CONTROLLER_DIGITAL_Y;
-pros::controller_digital_e_t ejectButton = pros::E_CONTROLLER_DIGITAL_B;
+pros::controller_digital_e_t intakeToBazookaRollerButton = pros::E_CONTROLLER_DIGITAL_R2;
+pros::controller_digital_e_t ejectButton = pros::E_CONTROLLER_DIGITAL_L2;
 
 // Inertial Sensor
 pros::Imu imu(inertialSensorPort);
+
+// vertical tracking wheel encoder
+pros::Rotation verticalEnc(rotationSensorPort);
+
+pros::Motor roller1Motor(roller1MotorPort, pros::MotorGearset::green);
+pros::Motor intakeMotorFront(intakeRollerPort, pros::MotorGearset::green);
+pros::Motor bazookaMotor(bazookaMotorPort, pros::MotorGearset::green);
+pros::Motor roller2Motor(roller2MotorPort, pros::MotorGearset::green);
+pros::Motor upperBackFlexWheelMotor(upperBackFlexWheelPort, pros::MotorGearset::green);
 
 /**
  * Runs initialization code. This occurs as soon as the program is started.
@@ -93,9 +106,6 @@ ASSET(example_txt);
  * Runs during auto
  */
 void autonomous() { 
-     // vertical tracking wheel encoder. Rotation sensor, port 23, reversed
-    pros::Rotation verticalEnc(15);
-
     // vertical tracking wheel. 2.75" diameter, 2.5" offset, left of the robot (negative)
     lemlib::TrackingWheel vertical(&verticalEnc, lemlib::Omniwheel::NEW_2, 0);
 
@@ -227,18 +237,12 @@ void autonomous() {
     chassis.setPose(0, 0, 0);
     chassis.turnToHeading(180, 999999);
     */
-   
-   
-
 }
 
 /**
  * Runs in driver control
  */
 void opcontrol() {
-    // vertical tracking wheel encoder. Rotation sensor, port 23, reversed
-    pros::Rotation verticalEnc(15);
-
     // vertical tracking wheel. 2.75" diameter, 2.5" offset, left of the robot (negative)
     lemlib::TrackingWheel vertical(&verticalEnc, lemlib::Omniwheel::NEW_2, 0);
 
@@ -320,12 +324,6 @@ void opcontrol() {
     bool last_d_pressed = false;
     bool last_x_pressed = false;
 
-    pros::Motor topChainMotor(roller1AndRoller2Motor, pros::MotorGearset::green);
-    pros::Motor intakeMotorFront(intakeRoller, pros::MotorGearset::green);
-    pros::Motor intakeMotor(bazookaMotor, pros::MotorGearset::green);
-    pros::Motor upperRollerMotor(roller3Motor, pros::MotorGearset::green);
-
-
     while (true) {
 
         int leftY = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);   
@@ -334,28 +332,30 @@ void opcontrol() {
         chassis.arcade(rightX, leftY);  
 
         if (controller.get_digital(intakeToBackRollerButton)) {
-            topChainMotor.move_velocity(aux_speed);
+            roller1Motor.move_velocity(aux_speed);
             intakeMotorFront.move_velocity(-aux_speed);
-            intakeMotor.move_velocity(-aux_speed);
-            upperRollerMotor.move_velocity(aux_speed);
+            bazookaMotor.move_velocity(-aux_speed);
+            roller2Motor.move_velocity(aux_speed);
+            upperBackFlexWheelMotor.move_velocity(aux_speed);
         } 
         else if (controller.get_digital(intakeToBazookaRollerButton)) {
-            topChainMotor.move_velocity(aux_speed);
+            roller1Motor.move_velocity(aux_speed);
             intakeMotorFront.move_velocity(-aux_speed);
-            intakeMotor.move_velocity(-aux_speed);
-            upperRollerMotor.move_velocity(-aux_speed);
+            bazookaMotor.move_velocity(-aux_speed);
+            roller2Motor.move_velocity(-aux_speed);
         } 
 		else if (controller.get_digital(ejectButton)) {
-            topChainMotor.move_velocity(-aux_speed);
+            roller1Motor.move_velocity(-aux_speed);
             intakeMotorFront.move_velocity(aux_speed);
-            intakeMotor.move_velocity(aux_speed);
-            upperRollerMotor.move_velocity(aux_speed);
+            bazookaMotor.move_velocity(aux_speed);
+            roller2Motor.move_velocity(aux_speed);
         } 
         else {
-            topChainMotor.move_velocity(0);
+            roller1Motor.move_velocity(0);
             intakeMotorFront.move_velocity(0);
-            intakeMotor.move_velocity(0);
-            upperRollerMotor.move_velocity(0);
+            bazookaMotor.move_velocity(0);
+            roller2Motor.move_velocity(0);
+            upperBackFlexWheelMotor.move_velocity(0);
         }
         
         if (controller.get_digital(loaderPistonMechButton)) {
