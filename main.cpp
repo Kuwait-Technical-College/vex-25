@@ -34,6 +34,7 @@ pros::Rotation verticalEnc(15);
 // vertical tracking wheel. 2.75" diameter, 2.5" offset, left of the robot (negative)
 lemlib::TrackingWheel vertical(&verticalEnc, lemlib::Omniwheel::NEW_2, 0.125);
 
+
 // drivetrain settings
 lemlib::Drivetrain drivetrain(&leftMotors, // left motor group
                               &rightMotors, // right motor group
@@ -45,9 +46,9 @@ lemlib::Drivetrain drivetrain(&leftMotors, // left motor group
 );
 
 // lateral motion controller
-lemlib::ControllerSettings linearController(12.5, // proportional gain (kP)
+lemlib::ControllerSettings linearController(1.5, // proportional gain (kP)
                                             0, // integral gain (kI)
-                                            36, // derivative gain (kD)
+                                            10, // derivative gain (kD)
                                             0, // anti windup
                                             0, // small error range, in inches
                                             0, // small error range timeout, in milliseconds
@@ -57,7 +58,7 @@ lemlib::ControllerSettings linearController(12.5, // proportional gain (kP)
 );
 
 // angular motion controller
-lemlib::ControllerSettings angularController(2.35, // proportional gain (kP)
+lemlib::ControllerSettings angularController(8, // proportional gain (kP)
                                              0, // integral gain (kI)
                                              20, // derivative gain (kD)
                                              0, // anti windup
@@ -69,7 +70,7 @@ lemlib::ControllerSettings angularController(2.35, // proportional gain (kP)
 );
 
 // sensors for odometry
-lemlib::OdomSensors sensors(&vertical, // vertical tracking wheel
+lemlib::OdomSensors sensors( &vertical, // vertical tracking wheel
                             nullptr, // vertical tracking wheel 2
                             nullptr, // horizontal tracking wheel
                             nullptr, // horizontal tracking wheel 2
@@ -133,6 +134,7 @@ ASSET(example_txt);
  * Runs during auto
  */
 void autonomous() { 
+    
     /* 
     // CHANGE THIS BASED ON ALLIANCE:
     // true = blue alliance, false = red alliance
@@ -195,16 +197,29 @@ void autonomous() {
         chassis.turnToHeading(0, 2000);
     }*/
     //tuning pid 
-    chassis.setPose(0, 0, 0);
-    chassis.moveToPoint(0, 12.5, 2000);
+    //chassis.setPose(0, 0, 0);
+    //chassis.moveToPoint(2, 0, 2000);
+    //chassis.moveToPoint(0, 2, 2000);
+    //chassis.turnToHeading(180, 1000);
     
     /*
     chassis.setPose(0, 0, 0);
     chassis.turnToHeading(180, 999999);
     */
    
-   
-
+    
+    
+    
+    
+// Verify code uploaded
+    controller.print(0, 0, "New Code");
+    pros::delay(2000);
+    
+    double current_heading = imu.get_heading();
+    double corrected_heading = current_heading - 90;
+    chassis.setPose(0, 0, corrected_heading);
+    
+    chassis.moveToPoint(0, 0.54, 5000, {.maxSpeed = 50});
 }
 
 /**
