@@ -72,11 +72,76 @@ pros::Imu imu(inertialSensorPort);
 // vertical tracking wheel encoder
 pros::Rotation verticalEnc(rotationSensorPort);
 
-    pros::Motor topChainMotor(roller1AndRoller2Motor, pros::MotorGearset::green);
-    pros::Motor intakeMotorFront(intakeRoller, pros::MotorGearset::green);
-    pros::Motor intakeMotor(bazookaMotor, pros::MotorGearset::green);
-    pros::Motor upperRollerMotor(roller3Motor, pros::MotorGearset::green);
-    pros::Motor upperBackFlexWheelMotor(upperBackFlexWheelPort, pros::MotorGearset::green);
+pros::Motor topChainMotor(roller1AndRoller2Motor, pros::MotorGearset::green);
+pros::Motor intakeMotorFront(intakeRoller, pros::MotorGearset::green);
+pros::Motor intakeMotor(bazookaMotor, pros::MotorGearset::green);
+pros::Motor upperRollerMotor(roller3Motor, pros::MotorGearset::green);
+pros::Motor upperBackFlexWheelMotor(upperBackFlexWheelPort, pros::MotorGearset::green);
+
+// Autonomous selector
+enum SelectedAuton { TEST_MODE, BLUE_ALLIANCE, RED_ALLIANCE };
+SelectedAuton selectedAuton = TEST_MODE;
+
+
+    // vertical tracking wheel. 2.75" diameter, 2.5" offset, left of the robot (negative)
+lemlib::TrackingWheel vertical(&verticalEnc, lemlib::Omniwheel::NEW_2, 0);
+
+// drivetrain settings
+lemlib::Drivetrain drivetrain(&leftMotorsGroup,
+                        &rightMotorsGroup,
+                        midWheelTrackWidth,
+                        lemlib::Omniwheel::NEW_325, // using new 3.25" omnis
+                        driveTrainRpm,
+                        horizontalDrift // horizontal drift is 2 if using tracking wheels if not use 8
+);
+
+
+// lateral motion controller
+lemlib::ControllerSettings linearController(11, // proportional gain (kP)
+                                            0, // integral gain (kI)
+                                            36, // derivative gain (kD)
+                                            0, // anti windup
+                                            0, // small error range, in inches
+                                            0, // small error range timeout, in milliseconds
+                                            0, // large error range, in inches
+                                            0, // large error range timeout, in milliseconds
+                                            0 // maximum acceleration (slew)
+);
+
+// angular motion controller
+lemlib::ControllerSettings angularController(2, // proportional gain (kP)
+                                            0, // integral gain (kI)
+                                            10, // derivative gain (kD)
+                                            0, // anti windup
+                                            0, // small error range, in degrees
+                                            0, // small error range timeout, in milliseconds
+                                            0, // large error range, in degrees
+                                            0, // large error range timeout, in milliseconds
+                                            0 // maximum acceleration (slew)
+);
+
+// sensors for odometry
+lemlib::OdomSensors sensors(&vertical, // vertical tracking wheel
+                            nullptr, // vertical tracking wheel 2
+                            nullptr, // horizontal tracking wheel
+                            nullptr, // horizontal tracking wheel 2
+                            &imu // inertial sensor
+);
+
+// input curve for throttle input during driver control
+lemlib::ExpoDriveCurve throttleCurve(3, // joystick deadband out of 127
+                                    10, // minimum output where drivetrain will move out of 127
+                                    1.019 // expo curve gain
+);
+
+// input curve for steer input during driver control
+lemlib::ExpoDriveCurve steerCurve(3, // joystick deadband out of 127
+                                10, // minimum output where drivetrain will move out of 127
+                                1.019 // expo curve gain
+);
+
+// create the chassis
+lemlib::Chassis chassis(drivetrain, linearController, angularController, sensors, &throttleCurve, &steerCurve);
 
 /**
  * Runs initialization code. This occurs as soon as the program is started.
@@ -85,6 +150,7 @@ pros::Rotation verticalEnc(rotationSensorPort);
  * to keep execution time for this mode under a few seconds.
  */
 void initialize() {
+    chassis.calibrate(); // calibrate sensorss
     pros::lcd::initialize(); // initialize brain screen
 
     // Robot configuration
@@ -100,218 +166,77 @@ void disabled() {}
  * runs after initialize if the robot is connected to field control
  */
 void competition_initialize() {
-
+    // Autonomous selector using controller buttons during 15-second prep
+    // Press Left button to cycle through auton modes
+    bool last_left_pressed = false;
+    int auton_index = 0;
+    
+    while (true) {
+        if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT)) {
+            if (!last_left_pressed) {
+                auton_index = (auton_index + 1) % 3;
+                last_left_pressed = true;
+            }
+        } else {
+            last_left_pressed = false;
+        }
+        
+        // Display current selection on brain screen
+        pros::lcd::clear();
+        pros::lcd::print(0, "Auton Selection");
+        if (auton_index == 0) {
+            pros::lcd::print(1, "[TEST MODE]");
+            selectedAuton = TEST_MODE;
+        } else if (auton_index == 1) {
+            pros::lcd::print(1, "[BLUE ALLIANCE]");
+            selectedAuton = BLUE_ALLIANCE;
+        } else {
+            pros::lcd::print(1, "[RED ALLIANCE]");
+            selectedAuton = RED_ALLIANCE;
+        }
+        pros::lcd::print(2, "Press LEFT to change");
+        
+        pros::delay(50);
+    }
 }
 
 // get a path used for pure pursuit
 ASSET(example_txt);
+
+
 
 /**
  * Runs during auto
  */
 void autonomous() { 
 
-     // vertical tracking wheel. 2.75" diameter, 2.5" offset, left of the robot (negative)
-    lemlib::TrackingWheel vertical(&verticalEnc, lemlib::Omniwheel::NEW_2, 0);
-
-    // drivetrain settings
-    lemlib::Drivetrain drivetrain(&leftMotorsGroup,
-                            &rightMotorsGroup, 
-                            midWheelTrackWidth,
-                            lemlib::Omniwheel::NEW_325, // using new 3.25" omnis
-                            driveTrainRpm,
-                            horizontalDrift // horizontal drift is 2 if using tracking wheels if not use 8
-    );
-
-
-    // lateral motion controller
-    lemlib::ControllerSettings linearController(11, // proportional gain (kP)
-                                                0, // integral gain (kI)
-                                                36, // derivative gain (kD)
-                                                0, // anti windup
-                                                0, // small error range, in inches
-                                                0, // small error range timeout, in milliseconds
-                                                0, // large error range, in inches
-                                                0, // large error range timeout, in milliseconds
-                                                0 // maximum acceleration (slew)
-    );
-
-    // angular motion controller
-    lemlib::ControllerSettings angularController(2, // proportional gain (kP)
-                                                0, // integral gain (kI)
-                                                10, // derivative gain (kD)
-                                                0, // anti windup
-                                                0, // small error range, in degrees
-                                                0, // small error range timeout, in milliseconds
-                                                0, // large error range, in degrees
-                                                0, // large error range timeout, in milliseconds
-                                                0 // maximum acceleration (slew)
-    );
-
-    // sensors for odometry
-    lemlib::OdomSensors sensors(&vertical, // vertical tracking wheel
-                                nullptr, // vertical tracking wheel 2
-                                nullptr, // horizontal tracking wheel
-                                nullptr, // horizontal tracking wheel 2
-                                &imu // inertial sensor
-    );
-
-    // input curve for throttle input during driver control
-    lemlib::ExpoDriveCurve throttleCurve(3, // joystick deadband out of 127
-                                        10, // minimum output where drivetrain will move out of 127
-                                        1.019 // expo curve gain
-    );
-
-    // input curve for steer input during driver control
-    lemlib::ExpoDriveCurve steerCurve(3, // joystick deadband out of 127
-                                    10, // minimum output where drivetrain will move out of 127
-                                    1.019 // expo curve gain
-    );
-
-    // create the chassis
-    lemlib::Chassis chassis(drivetrain, linearController, angularController, sensors, &throttleCurve, &steerCurve);
-    
     chassis.calibrate(); // calibrate sensors
 
-    /* 
-    // CHANGE THIS BASED ON ALLIANCE:
-    // true = blue alliance, false = red alliance
-    bool isBlue = false;
-    
-    if (isBlue == true) {
-        // BLUE ALLIANCE - Bottom left start
-        chassis.setPose(-58.701, -48.425, 269.029);
-        
-        // forward(57.413, 30)
-        chassis.moveToPoint(-58.701, -48.425 + 57.413, 3000);
-        
-        // turnTo(222.466, 30)
-        chassis.turnToHeading(222.466, 2000);
-        
-        // forward(21.857, 30)
-        chassis.moveToPoint(-58.701 - 15, -48.425 + 57.413 - 15, 3000);
-        
-        // turnTo(318.24, 30)
-        chassis.turnToHeading(318.24, 2000);
-        
-        // forward(20.516, 30)
-        chassis.moveToPoint(-58.701 - 15 + 14, -48.425 + 57.413 - 15 + 14, 3000);
-        
-        // turnTo(269.029, 30)
-        chassis.turnToHeading(269.029, 2000);
-        
-        // backward(32.252, 30)
-        chassis.moveToPoint(-58.701 - 15 + 14 - 32.252, -48.425 + 57.413 - 15 + 14, 3000, {.forwards = false});
-        
-        // turnTo(0, 30)
-        chassis.turnToHeading(0, 2000);
-        
-    } else {
-        // RED ALLIANCE - Bottom right start (mirrored)
-        chassis.setPose(58.701, -48.425, 360 - 269.029);
-        
-        // forward(57.413, 30) - mirrored
-        chassis.moveToPoint(58.701, -48.425 + 57.413, 3000);
-        
-        // turnTo(222.466, 30) - mirrored
-        chassis.turnToHeading(360 - 222.466, 2000);
-        
-        // forward(21.857, 30) - mirrored
-        chassis.moveToPoint(58.701 + 15, -48.425 + 57.413 - 15, 3000);
-        
-        // turnTo(318.24, 30) - mirrored
-        chassis.turnToHeading(360 - 318.24, 2000);
-        
-        // forward(20.516, 30) - mirrored
-        chassis.moveToPoint(58.701 + 15 - 14, -48.425 + 57.413 - 15 + 14, 3000);
-        
-        // turnTo(269.029, 30) - mirrored
-        chassis.turnToHeading(360 - 269.029, 2000);
-        
-        // backward(32.252, 30) - mirrored
-        chassis.moveToPoint(58.701 + 15 - 14 + 32.252, -48.425 + 57.413 - 15 + 14, 3000, {.forwards = false});
-        
-        // turnTo(0, 30)
-        chassis.turnToHeading(0, 2000);
-    }*/
-    //tuning pid 
-    chassis.setPose(0, 0, 0);
-    chassis.moveToPoint(0, 1, 999999);
-    
-    /*
-    chassis.setPose(0, 0, 0);
-    chassis.turnToHeading(180, 999999);
-    */
+    // Execute selected autonomous routine
+    switch(selectedAuton) {
+        case TEST_MODE:
+            // Simple tuning move: 1 inch forward
+            chassis.setPose(0, 0, 0);
+            chassis.moveToPoint(20, 15, 4000);
+            break;
+            
+        case BLUE_ALLIANCE:
+            chassis.setPose(0, 0, 0);
+            chassis.moveToPoint(0, 5, 4000);
+            break;
+            
+        case RED_ALLIANCE:
+            chassis.setPose(0, 0, 0);
+            chassis.moveToPoint(0, 5, 4000);
+            break;
+    }
 }
 
 /**
  * Runs in driver control
  */
 void opcontrol() {
-
-
-     // vertical tracking wheel. 2.75" diameter, 2.5" offset, left of the robot (negative)
-    lemlib::TrackingWheel vertical(&verticalEnc, lemlib::Omniwheel::NEW_2, 0);
-
-    // drivetrain settings
-    lemlib::Drivetrain drivetrain(&leftMotorsGroup,
-                            &rightMotorsGroup, 
-                            midWheelTrackWidth,
-                            lemlib::Omniwheel::NEW_325, // using new 3.25" omnis
-                            driveTrainRpm,
-                            horizontalDrift // horizontal drift is 2 if using tracking wheels if not use 8
-    );
-
-
-    // lateral motion controller
-    lemlib::ControllerSettings linearController(11, // proportional gain (kP)
-                                                0, // integral gain (kI)
-                                                36, // derivative gain (kD)
-                                                0, // anti windup
-                                                0, // small error range, in inches
-                                                0, // small error range timeout, in milliseconds
-                                                0, // large error range, in inches
-                                                0, // large error range timeout, in milliseconds
-                                                0 // maximum acceleration (slew)
-    );
-
-    // angular motion controller
-    lemlib::ControllerSettings angularController(2, // proportional gain (kP)
-                                                0, // integral gain (kI)
-                                                10, // derivative gain (kD)
-                                                0, // anti windup
-                                                0, // small error range, in degrees
-                                                0, // small error range timeout, in milliseconds
-                                                0, // large error range, in degrees
-                                                0, // large error range timeout, in milliseconds
-                                                0 // maximum acceleration (slew)
-    );
-
-    // sensors for odometry
-    lemlib::OdomSensors sensors(&vertical, // vertical tracking wheel
-                                nullptr, // vertical tracking wheel 2
-                                nullptr, // horizontal tracking wheel
-                                nullptr, // horizontal tracking wheel 2
-                                &imu // inertial sensor
-    );
-
-    // input curve for throttle input during driver control
-    lemlib::ExpoDriveCurve throttleCurve(3, // joystick deadband out of 127
-                                        10, // minimum output where drivetrain will move out of 127
-                                        1.019 // expo curve gain
-    );
-
-    // input curve for steer input during driver control
-    lemlib::ExpoDriveCurve steerCurve(3, // joystick deadband out of 127
-                                    10, // minimum output where drivetrain will move out of 127
-                                    1.019 // expo curve gain
-    );
-
-    // create the chassis
-    lemlib::Chassis chassis(drivetrain, linearController, angularController, sensors, &throttleCurve, &steerCurve);
-    
     chassis.calibrate(); // calibrate sensors
-
     // thread to for brain screen and position logging
     pros::Task screenTask([&]() {
         while (true) {
