@@ -14,7 +14,7 @@ pros::Controller controller(pros::E_CONTROLLER_MASTER);
 pros::v5::MotorGears drivetrainMotorsRatio = pros::MotorGearset::blue; // 600 rpm
 double maxRPM = 200.0;
 double aux_speed = 200.0;
-int midWheelTrackWidth = 11;
+int midWheelTrackWidth = 11.125;
 int driveTrainRpm = 200;
 int horizontalDrift = 2;
 
@@ -72,11 +72,11 @@ pros::Imu imu(inertialSensorPort);
 // vertical tracking wheel encoder
 pros::Rotation verticalEnc(rotationSensorPort);
 
-pros::Motor topChainMotor(roller1AndRoller2Motor, pros::MotorGearset::green);
-pros::Motor intakeMotorFront(intakeRoller, pros::MotorGearset::green);
-pros::Motor intakeMotor(bazookaMotor, pros::MotorGearset::green);
-pros::Motor upperRollerMotor(roller3Motor, pros::MotorGearset::green);
-pros::Motor upperBackFlexWheelMotor(upperBackFlexWheelPort, pros::MotorGearset::green);
+    pros::Motor topChainMotor(roller1AndRoller2Motor, pros::MotorGearset::green);
+    pros::Motor intakeMotorFront(intakeRoller, pros::MotorGearset::green);
+    pros::Motor intakeMotor(bazookaMotor, pros::MotorGearset::green);
+    pros::Motor upperRollerMotor(roller3Motor, pros::MotorGearset::green);
+    pros::Motor upperBackFlexWheelMotor(upperBackFlexWheelPort, pros::MotorGearset::green);
 
 /**
  * Runs initialization code. This occurs as soon as the program is started.
@@ -110,6 +110,69 @@ ASSET(example_txt);
  * Runs during auto
  */
 void autonomous() { 
+
+     // vertical tracking wheel. 2.75" diameter, 2.5" offset, left of the robot (negative)
+    lemlib::TrackingWheel vertical(&verticalEnc, lemlib::Omniwheel::NEW_2, 0);
+
+    // drivetrain settings
+    lemlib::Drivetrain drivetrain(&leftMotorsGroup,
+                            &rightMotorsGroup, 
+                            midWheelTrackWidth,
+                            lemlib::Omniwheel::NEW_325, // using new 3.25" omnis
+                            driveTrainRpm,
+                            horizontalDrift // horizontal drift is 2 if using tracking wheels if not use 8
+    );
+
+
+    // lateral motion controller
+    lemlib::ControllerSettings linearController(11, // proportional gain (kP)
+                                                0, // integral gain (kI)
+                                                36, // derivative gain (kD)
+                                                0, // anti windup
+                                                0, // small error range, in inches
+                                                0, // small error range timeout, in milliseconds
+                                                0, // large error range, in inches
+                                                0, // large error range timeout, in milliseconds
+                                                0 // maximum acceleration (slew)
+    );
+
+    // angular motion controller
+    lemlib::ControllerSettings angularController(2, // proportional gain (kP)
+                                                0, // integral gain (kI)
+                                                10, // derivative gain (kD)
+                                                0, // anti windup
+                                                0, // small error range, in degrees
+                                                0, // small error range timeout, in milliseconds
+                                                0, // large error range, in degrees
+                                                0, // large error range timeout, in milliseconds
+                                                0 // maximum acceleration (slew)
+    );
+
+    // sensors for odometry
+    lemlib::OdomSensors sensors(&vertical, // vertical tracking wheel
+                                nullptr, // vertical tracking wheel 2
+                                nullptr, // horizontal tracking wheel
+                                nullptr, // horizontal tracking wheel 2
+                                &imu // inertial sensor
+    );
+
+    // input curve for throttle input during driver control
+    lemlib::ExpoDriveCurve throttleCurve(3, // joystick deadband out of 127
+                                        10, // minimum output where drivetrain will move out of 127
+                                        1.019 // expo curve gain
+    );
+
+    // input curve for steer input during driver control
+    lemlib::ExpoDriveCurve steerCurve(3, // joystick deadband out of 127
+                                    10, // minimum output where drivetrain will move out of 127
+                                    1.019 // expo curve gain
+    );
+
+    // create the chassis
+    lemlib::Chassis chassis(drivetrain, linearController, angularController, sensors, &throttleCurve, &steerCurve);
+    
+    chassis.calibrate(); // calibrate sensors
+
     /* 
     // CHANGE THIS BASED ON ALLIANCE:
     // true = blue alliance, false = red alliance
@@ -172,8 +235,8 @@ void autonomous() {
         chassis.turnToHeading(0, 2000);
     }*/
     //tuning pid 
-    //chassis.setPose(0, 0, 0);
-    //chassis.moveToPoint(0, 15, 999999);
+    chassis.setPose(0, 0, 0);
+    chassis.moveToPoint(0, 1, 999999);
     
     /*
     chassis.setPose(0, 0, 0);
@@ -187,7 +250,7 @@ void autonomous() {
 void opcontrol() {
 
 
-    // vertical tracking wheel. 2.75" diameter, 2.5" offset, left of the robot (negative)
+     // vertical tracking wheel. 2.75" diameter, 2.5" offset, left of the robot (negative)
     lemlib::TrackingWheel vertical(&verticalEnc, lemlib::Omniwheel::NEW_2, 0);
 
     // drivetrain settings
@@ -201,9 +264,9 @@ void opcontrol() {
 
 
     // lateral motion controller
-    lemlib::ControllerSettings linearController(10, // proportional gain (kP)
+    lemlib::ControllerSettings linearController(11, // proportional gain (kP)
                                                 0, // integral gain (kI)
-                                                3, // derivative gain (kD)
+                                                36, // derivative gain (kD)
                                                 0, // anti windup
                                                 0, // small error range, in inches
                                                 0, // small error range timeout, in milliseconds
