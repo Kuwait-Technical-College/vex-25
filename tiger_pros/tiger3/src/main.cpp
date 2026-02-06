@@ -27,7 +27,7 @@ signed char frontLeftUpMotorPort = 13;
 signed char frontLeftDownMotorPort = -14;
 signed char backLeftUpMotorPort = 11;
 signed char backLeftDownMotorPort = -12;
-signed char upperBackFlexWheelPort = 8;
+signed char upperBackFlexWheelPort = 7;
 
 signed char inertialSensorPort = 16;
 
@@ -285,7 +285,7 @@ void opcontrol() {
             topChainMotor.move_velocity(-aux_speed);
             intakeMotorFront.move_velocity(aux_speed);
             intakeMotor.move_velocity(aux_speed);
-            upperRollerMotor.move_velocity(aux_speed);
+            upperRollerMotor.move_velocity(-aux_speed);
         } 
         else if (controller.get_digital(intakeOnlyButton)) {
             topChainMotor.move_velocity(0);
