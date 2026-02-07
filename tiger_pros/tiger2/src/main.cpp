@@ -162,36 +162,22 @@ void initialize() {
             pros::delay(50);
         }
     });
-    // Robot configuration
-
 }
 
-/**
- * Runs while the robot is disabled
- */
+
 void disabled() {}
 
-/**
- * runs after initialize if the robot is connected to field control
- */
 void competition_initialize() {}
 
-// get a path used for pure pursuit
+
 ASSET(example_txt);
 
-/**
- * Runs during auto
- */
 void autonomous() { 
     chassis.setPose(0, 0, 0);
-    chassis.moveToPoint(0, 10, 4000);
+    chassis.moveToPoint(0, 2, 4000);
 }
 
-/**
- * Runs in driver control
- */
 void opcontrol() {
-    // Piston state tracking
     bool piston_state = false;
     bool last_d_pressed = false;
     bool last_x_pressed = false;
