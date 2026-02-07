@@ -173,10 +173,10 @@ void autonomous() {
     }*/
     //tuning pid 
     //chassis.setPose(0, 0, 0);
-    //chassis.moveToPoint(0, 15, 999999);
+    chassis.moveToPoint(0, 10, 999999);
     
     /*
-    chassis.setPose(0, 0, 0);
+    
     chassis.turnToHeading(180, 999999);
     */
 }

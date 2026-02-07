@@ -15,7 +15,7 @@ pros::v5::MotorGears drivetrainMotorsRatio = pros::MotorGearset::blue; // 600 rp
 double maxRPM = 200.0;
 double aux_speed = 200.0;
 int midWheelTrackWidth = 11.125;
-int driveTrainRpm = 200;
+int driveTrainRpm = 350;
 int horizontalDrift = 2;
 
 
@@ -29,14 +29,14 @@ signed char frontLeftUpMotorPort = 13;
 signed char frontLeftDownMotorPort = -14;
 signed char backLeftUpMotorPort = 11;
 signed char backLeftDownMotorPort = -12;
-signed char upperBackFlexWheelPort = 8;
+signed char upperBackFlexWheelPort = 10;
 
 signed char inertialSensorPort = 16;
 
-signed char intakeRoller = 9;
+signed char intakeRoller = 3;
 signed char roller1AndRoller2Motor = 1;
 signed char bazookaMotor = 2;
-signed char roller3Motor = 10;
+signed char roller3Motor = 8;
 
 signed char rotationSensorPort = 15;
 
@@ -78,9 +78,6 @@ pros::Motor intakeMotor(bazookaMotor, pros::MotorGearset::green);
 pros::Motor upperRollerMotor(roller3Motor, pros::MotorGearset::green);
 pros::Motor upperBackFlexWheelMotor(upperBackFlexWheelPort, pros::MotorGearset::green);
 
-// Autonomous selector
-enum SelectedAuton { TEST_MODE, BLUE_ALLIANCE, RED_ALLIANCE };
-SelectedAuton selectedAuton = TEST_MODE;
 
 
     // vertical tracking wheel. 2.75" diameter, 2.5" offset, left of the robot (negative)
@@ -150,94 +147,9 @@ lemlib::Chassis chassis(drivetrain, linearController, angularController, sensors
  * to keep execution time for this mode under a few seconds.
  */
 void initialize() {
-    chassis.calibrate(); // calibrate sensorss
     pros::lcd::initialize(); // initialize brain screen
-
-    // Robot configuration
-
-}
-
-/**
- * Runs while the robot is disabled
- */
-void disabled() {}
-
-/**
- * runs after initialize if the robot is connected to field control
- */
-void competition_initialize() {
-    // Autonomous selector using controller buttons during 15-second prep
-    // Press Left button to cycle through auton modes
-    bool last_left_pressed = false;
-    int auton_index = 0;
+    chassis.calibrate(); // calibrate sensorss
     
-    while (true) {
-        if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT)) {
-            if (!last_left_pressed) {
-                auton_index = (auton_index + 1) % 3;
-                last_left_pressed = true;
-            }
-        } else {
-            last_left_pressed = false;
-        }
-        
-        // Display current selection on brain screen
-        pros::lcd::clear();
-        pros::lcd::print(0, "Auton Selection");
-        if (auton_index == 0) {
-            pros::lcd::print(1, "[TEST MODE]");
-            selectedAuton = TEST_MODE;
-        } else if (auton_index == 1) {
-            pros::lcd::print(1, "[BLUE ALLIANCE]");
-            selectedAuton = BLUE_ALLIANCE;
-        } else {
-            pros::lcd::print(1, "[RED ALLIANCE]");
-            selectedAuton = RED_ALLIANCE;
-        }
-        pros::lcd::print(2, "Press LEFT to change");
-        
-        pros::delay(50);
-    }
-}
-
-// get a path used for pure pursuit
-ASSET(example_txt);
-
-
-
-/**
- * Runs during auto
- */
-void autonomous() { 
-
-    chassis.calibrate(); // calibrate sensors
-
-    // Execute selected autonomous routine
-    switch(selectedAuton) {
-        case TEST_MODE:
-            // Simple tuning move: 1 inch forward
-            chassis.setPose(0, 0, 0);
-            chassis.moveToPoint(20, 15, 4000);
-            break;
-            
-        case BLUE_ALLIANCE:
-            chassis.setPose(0, 0, 0);
-            chassis.moveToPoint(0, 5, 4000);
-            break;
-            
-        case RED_ALLIANCE:
-            chassis.setPose(0, 0, 0);
-            chassis.moveToPoint(0, 5, 4000);
-            break;
-    }
-}
-
-/**
- * Runs in driver control
- */
-void opcontrol() {
-    chassis.calibrate(); // calibrate sensors
-    // thread to for brain screen and position logging
     pros::Task screenTask([&]() {
         while (true) {
             // print robot location to the brain screen
@@ -250,7 +162,35 @@ void opcontrol() {
             pros::delay(50);
         }
     });
+    // Robot configuration
 
+}
+
+/**
+ * Runs while the robot is disabled
+ */
+void disabled() {}
+
+/**
+ * runs after initialize if the robot is connected to field control
+ */
+void competition_initialize() {}
+
+// get a path used for pure pursuit
+ASSET(example_txt);
+
+/**
+ * Runs during auto
+ */
+void autonomous() { 
+    chassis.setPose(0, 0, 0);
+    chassis.moveToPoint(0, 10, 4000);
+}
+
+/**
+ * Runs in driver control
+ */
+void opcontrol() {
     // Piston state tracking
     bool piston_state = false;
     bool last_d_pressed = false;
