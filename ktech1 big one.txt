@@ -1,0 +1,41 @@
+// 1.Open piston on port H at the start
+    pis1.set_value(true);  // Opens the piston
+    pros::delay(100);      // Small delay to let piston actuate
+
+    // 2. Move forward for 1 second
+    leftMotors.move_voltage(6000);   
+    rightMotors.move_voltage(6000);  
+    pros::delay(1110);                
+    
+    // 3. Stop for 2 seconds
+    leftMotors.move_voltage(0);     
+    rightMotors.move_voltage(0);    
+    pros::delay(2000);   
+
+    // 4.Stop after move 
+    leftMotors.move_voltage(0);
+    rightMotors.move_voltage(0);
+    pros::delay(100);        
+    
+    // 5. Turn 90 degrees LEFT
+    leftMotors.move_voltage(-6000);  // Left backward
+    rightMotors.move_voltage(6000);  // Right forward
+    pros::delay(300);                // Adjust this for exact 90 degrees
+    
+    // 6.Stop after turn
+    leftMotors.move_voltage(0);
+    rightMotors.move_voltage(0);
+    pros::delay(100);                // Small pause
+    
+    // 7. Move forward for 0.5 seconds
+    leftMotors.move_voltage(6000);   
+    rightMotors.move_voltage(6000);  
+    pros::delay(500);                // 0.5 seconds
+    // 8. Stop
+    leftMotors.move_voltage(0);
+    rightMotors.move_voltage(0);
+    // 9. Spin motor on port -2 for 3 seconds
+    pros::Motor extraMotor(-2);      // Create motor on port -2
+    extraMotor.move_voltage(6000);   // Spin at 50% power
+    pros::delay(3000);               // Run for 3 seconds
+    extraMotor.move_voltage(0);      // Stop
