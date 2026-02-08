@@ -33,10 +33,10 @@ signed char upperBackFlexWheelPort = 10;
 
 signed char inertialSensorPort = 16;
 
-signed char intakeRoller = 3;
-signed char roller1AndRoller2Motor = 1;
-signed char bazookaMotor = 2;
-signed char roller3Motor = 8;
+signed char intakeRollerPort = 3;
+signed char roller1AndRoller2MotorPort = 1;
+signed char bazookaMotorPort = 2;
+signed char roller3MotorPort = 8;
 
 signed char rotationSensorPort = 15;
 
@@ -72,10 +72,10 @@ pros::Imu imu(inertialSensorPort);
 // vertical tracking wheel encoder
 pros::Rotation verticalEnc(rotationSensorPort);
 
-pros::Motor topChainMotor(roller1AndRoller2Motor, pros::MotorGearset::green);
-pros::Motor intakeMotorFront(intakeRoller, pros::MotorGearset::green);
-pros::Motor intakeMotor(bazookaMotor, pros::MotorGearset::green);
-pros::Motor upperRollerMotor(roller3Motor, pros::MotorGearset::green);
+pros::Motor roller1Motor(roller1AndRoller2MotorPort, pros::MotorGearset::green);
+pros::Motor intakeMotorFront(intakeRollerPort, pros::MotorGearset::green);
+pros::Motor bazookaMotor(bazookaMotorPort, pros::MotorGearset::green);
+pros::Motor upperRollerMotor(roller3MotorPort, pros::MotorGearset::green);
 pros::Motor upperBackFlexWheelMotor(upperBackFlexWheelPort, pros::MotorGearset::green);
 
 
@@ -173,8 +173,46 @@ void competition_initialize() {}
 ASSET(example_txt);
 
 void autonomous() { 
-    chassis.setPose(0, 0, 0);
-    chassis.moveToPoint(0, 2, 4000);
+// 1.Open piston on port H at the start
+    pistonBazookaMech.set_value(true);  // Opens the piston
+    pros::delay(500);      // Small delay to let piston actuate
+
+    // 2. Move forward for 1 second
+    leftMotorsGroup.move_voltage(6000);   
+    rightMotorsGroup.move_voltage(-6000);  
+    pros::delay(1400);                
+    
+    // 3. Stop for 2 seconds
+    leftMotorsGroup.move_voltage(0);     
+    rightMotorsGroup.move_voltage(0);    
+    pros::delay(2000);   
+
+    // 4.Stop after move 
+    leftMotorsGroup.move_voltage(0);
+    rightMotorsGroup.move_voltage(0);
+    pros::delay(1000);        
+    
+    // 5. Turn 90 degrees LEFT
+    leftMotorsGroup.move_voltage(-6000);  // Left backward
+    rightMotorsGroup.move_voltage(-6000);  // Right forward
+    pros::delay(320);                // Adjust this for exact 90 degrees
+    
+    // 6.Stop after turn
+    leftMotorsGroup.move_voltage(0);
+    rightMotorsGroup.move_voltage(0);
+    pros::delay(1000);                // Small pause
+    
+    // 7. Move forward for 0.5 seconds
+    leftMotorsGroup.move_voltage(6000);   
+    rightMotorsGroup.move_voltage(-6000);  
+    pros::delay(500);                // 0.5 seconds
+    // 8. Stop
+    leftMotorsGroup.move_voltage(0);
+    rightMotorsGroup.move_voltage(0);
+
+    bazookaMotor.move_voltage(-6000);   // Spin at 50% power
+    pros::delay(3000);               // Run for 3 seconds
+    bazookaMotor.move_voltage(0);      // Stop
 }
 
 void opcontrol() {
@@ -192,28 +230,28 @@ void opcontrol() {
         chassis.arcade(rightX, leftY);  
 
         if (controller.get_digital(intakeToBackRollerButton)) {
-            topChainMotor.move_velocity(aux_speed);
+            roller1Motor.move_velocity(aux_speed);
             intakeMotorFront.move_velocity(-aux_speed);
-            intakeMotor.move_velocity(-aux_speed);
+            bazookaMotor.move_velocity(-aux_speed);
             upperRollerMotor.move_velocity(aux_speed);
             upperBackFlexWheelMotor.move_velocity(aux_speed);
         } 
         else if (controller.get_digital(intakeToBazookaRollerButton)) {
-            topChainMotor.move_velocity(aux_speed);
+            roller1Motor.move_velocity(aux_speed);
             intakeMotorFront.move_velocity(-aux_speed);
-            intakeMotor.move_velocity(-aux_speed);
+            bazookaMotor.move_velocity(-aux_speed);
             upperRollerMotor.move_velocity(-aux_speed);
         } 
 		else if (controller.get_digital(ejectButton)) {
-            topChainMotor.move_velocity(-aux_speed);
+            roller1Motor.move_velocity(-aux_speed);
             intakeMotorFront.move_velocity(aux_speed);
-            intakeMotor.move_velocity(aux_speed);
+            bazookaMotor.move_velocity(aux_speed);
             upperRollerMotor.move_velocity(aux_speed);
         } 
         else {
-            topChainMotor.move_velocity(0);
+            roller1Motor.move_velocity(0);
             intakeMotorFront.move_velocity(0);
-            intakeMotor.move_velocity(0);
+            bazookaMotor.move_velocity(0);
             upperRollerMotor.move_velocity(0);
             upperBackFlexWheelMotor.move_velocity(0);
         }

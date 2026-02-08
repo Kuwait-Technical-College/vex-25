@@ -161,8 +161,46 @@ ASSET(example_txt);
 
 void autonomous()
 {
-    chassis.setPose(0, 0, 0);
-    chassis.moveToPoint(0, 10, 999999);
+  
+    pistonBazookaMech.set_value(true);  // Opens the piston
+    pros::delay(500);      // Small delay to let piston actuate
+
+    // 2. Move forward for 1 second
+    leftMotorsGroup.move_voltage(6000);   
+    rightMotorsGroup.move_voltage(-6000);  
+    pros::delay(1612);                
+    
+    // 3. Stop for 2 seconds
+    leftMotorsGroup.move_voltage(0);     
+    rightMotorsGroup.move_voltage(0);    
+    pros::delay(2000);   
+
+    // 4.Stop after move 
+    leftMotorsGroup.move_voltage(0);
+    rightMotorsGroup.move_voltage(0);
+    pros::delay(1000);        
+    
+    // 5. Turn 90 degrees LEFT
+    leftMotorsGroup.move_voltage(-6000);  // Left backward
+    rightMotorsGroup.move_voltage(-6000);  // Right forward
+    pros::delay(326);                // Adjust this for exact 90 degrees
+    
+    // 6.Stop after turn
+    leftMotorsGroup.move_voltage(0);
+    rightMotorsGroup.move_voltage(0);
+    pros::delay(1000);                // Small pause
+    
+    // 7. Move forward for 0.5 seconds
+    leftMotorsGroup.move_voltage(6000);   
+    rightMotorsGroup.move_voltage(-6000);  
+    pros::delay(533);                // 0.5 seconds
+    // 8. Stop
+    leftMotorsGroup.move_voltage(0);
+    rightMotorsGroup.move_voltage(0);
+
+    intakeMotor.move_voltage(-12000);   
+    pros::delay(3000);               // Run for 3 seconds
+    intakeMotor.move_voltage(0);      // Stop
 }
 
 void opcontrol()

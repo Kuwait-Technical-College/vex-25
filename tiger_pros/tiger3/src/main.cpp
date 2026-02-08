@@ -30,7 +30,6 @@ signed char backLeftDownMotorPort = -12;
 signed char upperBackFlexWheelPort = 7;
 
 signed char inertialSensorPort = 16;
-
 signed char intakeRoller = 8;
 signed char roller1AndRoller2Motor = 1;
 signed char bazookaMotor = 2;
@@ -178,76 +177,42 @@ void competition_initialize() {
  * Runs during auto
  */
 void autonomous() { 
-    /* 
-    // CHANGE THIS BASED ON ALLIANCE:
-    // true = blue alliance, false = red alliance
-    bool isBlue = false;
     
-    if (isBlue == true) {
-        // BLUE ALLIANCE - Bottom left start
-        chassis.setPose(-58.701, -48.425, 269.029);
-        
-        // forward(57.413, 30)
-        chassis.moveToPoint(-58.701, -48.425 + 57.413, 3000);
-        
-        // turnTo(222.466, 30)
-        chassis.turnToHeading(222.466, 2000);
-        
-        // forward(21.857, 30)
-        chassis.moveToPoint(-58.701 - 15, -48.425 + 57.413 - 15, 3000);
-        
-        // turnTo(318.24, 30)
-        chassis.turnToHeading(318.24, 2000);
-        
-        // forward(20.516, 30)
-        chassis.moveToPoint(-58.701 - 15 + 14, -48.425 + 57.413 - 15 + 14, 3000);
-        
-        // turnTo(269.029, 30)
-        chassis.turnToHeading(269.029, 2000);
-        
-        // backward(32.252, 30)
-        chassis.moveToPoint(-58.701 - 15 + 14 - 32.252, -48.425 + 57.413 - 15 + 14, 3000, {.forwards = false});
-        
-        // turnTo(0, 30)
-        chassis.turnToHeading(0, 2000);
-        
-    } else {
-        // RED ALLIANCE - Bottom right start (mirrored)
-        chassis.setPose(58.701, -48.425, 360 - 269.029);
-        
-        // forward(57.413, 30) - mirrored
-        chassis.moveToPoint(58.701, -48.425 + 57.413, 3000);
-        
-        // turnTo(222.466, 30) - mirrored
-        chassis.turnToHeading(360 - 222.466, 2000);
-        
-        // forward(21.857, 30) - mirrored
-        chassis.moveToPoint(58.701 + 15, -48.425 + 57.413 - 15, 3000);
-        
-        // turnTo(318.24, 30) - mirrored
-        chassis.turnToHeading(360 - 318.24, 2000);
-        
-        // forward(20.516, 30) - mirrored
-        chassis.moveToPoint(58.701 + 15 - 14, -48.425 + 57.413 - 15 + 14, 3000);
-        
-        // turnTo(269.029, 30) - mirrored
-        chassis.turnToHeading(360 - 269.029, 2000);
-        
-        // backward(32.252, 30) - mirrored
-        chassis.moveToPoint(58.701 + 15 - 14 + 32.252, -48.425 + 57.413 - 15 + 14, 3000, {.forwards = false});
-        
-        // turnTo(0, 30)
-        chassis.turnToHeading(0, 2000);
-    }*/
-    //tuning pid 
-    chassis.setPose(0, 0, 0);
-    chassis.moveToPoint(0, 10, 999999);
+
+    // 2. Move forward for 1 second
+    leftMotorsGroup.move_voltage(-6000);   
+    rightMotorsGroup.move_voltage(6000);  
+    pros::delay(1360);                
     
-    /*
-    chassis.setPose(0, 0, 0);
-    chassis.turnToHeading(180, 999999);
-    */
-   
+    // 3. Stop for 2 seconds
+    leftMotorsGroup.move_voltage(0);     
+    rightMotorsGroup.move_voltage(0);    
+    pros::delay(2000);   
+
+    // 4.Stop after move 
+    leftMotorsGroup.move_voltage(0);
+    rightMotorsGroup.move_voltage(0);
+    pros::delay(1000);        
+    
+    //5. Turn 90 degrees right
+    leftMotorsGroup.move_voltage(6000);  // Left backward
+    rightMotorsGroup.move_voltage(6000);  // Right forward
+    pros::delay(160);             
+    
+     leftMotorsGroup.move_voltage(-6000);   
+    rightMotorsGroup.move_voltage(6000);  
+    pros::delay(100);
+
+    // 6.Stop after turn
+    leftMotorsGroup.move_voltage(0);
+    rightMotorsGroup.move_voltage(0);
+    pros::delay(1000);                // Small pause
+
+    upperBackFlexWheelMotor.move_voltage(12000);   
+    pros::delay(3000);               // Run for 3 seconds
+    upperBackFlexWheelMotor.move_voltage(0);      // Stop
+
+    
    
 
 }
